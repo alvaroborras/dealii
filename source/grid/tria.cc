@@ -13731,31 +13731,34 @@ void Triangulation<dim, spacedim>::compute_line_to_adjacent_cells_map()
 
       // Loop over all cells -> lines -> vertices
       for (const auto &cell : this->active_cell_iterators())
-        for (unsigned int line : cell->line_indices())
-          {
-            const unsigned int vertex_0 = cell->vertex_index(
-              GeometryInfo<dim>::line_to_cell_vertices(line, 0));
-            const unsigned int vertex_1 = cell->vertex_index(
-              GeometryInfo<dim>::line_to_cell_vertices(line, 1));
-            const std::set<
-              typename Triangulation<dim, spacedim>::active_cell_iterator>
-              &adjacent_cells_to_vertex_0 = vertex_to_cell[vertex_0];
-            const std::set<
-              typename Triangulation<dim, spacedim>::active_cell_iterator>
-              &adjacent_cells_to_vertex_1 = vertex_to_cell[vertex_1];
+        {
+          const ReferenceCell reference_cell = cell->reference_cell();
+          for (unsigned int line : cell->line_indices())
+            {
+              const unsigned int vertex_0 = cell->vertex_index(
+                reference_cell.line_to_cell_vertices(line, 0));
+              const unsigned int vertex_1 = cell->vertex_index(
+                reference_cell.line_to_cell_vertices(line, 1));
+              const std::set<
+                typename Triangulation<dim, spacedim>::active_cell_iterator>
+                &adjacent_cells_to_vertex_0 = vertex_to_cell[vertex_0];
+              const std::set<
+                typename Triangulation<dim, spacedim>::active_cell_iterator>
+                &adjacent_cells_to_vertex_1 = vertex_to_cell[vertex_1];
 
-            // add all cells that are adjacent to vertex_0 and vertex_1
-            std::set_intersection(
-              adjacent_cells_to_vertex_0.begin(),
-              adjacent_cells_to_vertex_0.end(),
-              adjacent_cells_to_vertex_1.begin(),
-              adjacent_cells_to_vertex_1.end(),
-              std::inserter(line_to_adjacent_cells_map
-                              .value()[cell->active_cell_index()][line],
-                            line_to_adjacent_cells_map
-                              .value()[cell->active_cell_index()][line]
-                              .begin()));
-          }
+              // add all cells that are adjacent to vertex_0 and vertex_1
+              std::set_intersection(
+                adjacent_cells_to_vertex_0.begin(),
+                adjacent_cells_to_vertex_0.end(),
+                adjacent_cells_to_vertex_1.begin(),
+                adjacent_cells_to_vertex_1.end(),
+                std::inserter(line_to_adjacent_cells_map
+                                .value()[cell->active_cell_index()][line],
+                              line_to_adjacent_cells_map
+                                .value()[cell->active_cell_index()][line]
+                                .begin()));
+            }
+        }
     }
 }
 
