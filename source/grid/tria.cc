@@ -13721,12 +13721,10 @@ void Triangulation<dim, spacedim>::compute_line_to_adjacent_cells_map()
       else
         // Else if the std::optional has no value attached to it, create a table
         // of the corresponding size and store it inside the std::optional.
-        this->line_to_adjacent_cells_map =
-          std::make_optional<Table<2, std::set<active_cell_iterator>>>(
-            Table<2, std::set<active_cell_iterator>>(
-              this->n_active_cells(),
-              (is_mixed_mesh() ? GeometryInfo<dim>::lines_per_cell :
-                                 get_reference_cells()[0].n_lines())));
+        this->line_to_adjacent_cells_map.emplace(
+          this->n_active_cells(),
+          (is_mixed_mesh() ? GeometryInfo<dim>::lines_per_cell :
+                             get_reference_cells()[0].n_lines()));
 
 
       // Loop over all cells -> lines -> vertices
@@ -13739,24 +13737,26 @@ void Triangulation<dim, spacedim>::compute_line_to_adjacent_cells_map()
                 reference_cell.line_to_cell_vertices(line, 0));
               const unsigned int vertex_1 = cell->vertex_index(
                 reference_cell.line_to_cell_vertices(line, 1));
-              const std::set<
-                typename Triangulation<dim, spacedim>::active_cell_iterator>
-                &adjacent_cells_to_vertex_0 = vertex_to_cell[vertex_0];
-              const std::set<
-                typename Triangulation<dim, spacedim>::active_cell_iterator>
-                &adjacent_cells_to_vertex_1 = vertex_to_cell[vertex_1];
+              const auto &cells_0 = vertex_to_cell[vertex_0];
+              const auto &cells_1 = vertex_to_cell[vertex_1];
+              auto        cell_0  = cells_0.begin();
+              auto        cell_1  = cells_1.begin();
+              auto       &adjacent_cells =
+                line_to_adjacent_cells_map
+                  .value()[cell->active_cell_index()][line];
 
-              // add all cells that are adjacent to vertex_0 and vertex_1
-              std::set_intersection(
-                adjacent_cells_to_vertex_0.begin(),
-                adjacent_cells_to_vertex_0.end(),
-                adjacent_cells_to_vertex_1.begin(),
-                adjacent_cells_to_vertex_1.end(),
-                std::inserter(line_to_adjacent_cells_map
-                                .value()[cell->active_cell_index()][line],
-                              line_to_adjacent_cells_map
-                                .value()[cell->active_cell_index()][line]
-                                .begin()));
+              // A direct merge avoids repeated searches in these small trees.
+              while (cell_0 != cells_0.end() && cell_1 != cells_1.end())
+                if (*cell_0 < *cell_1)
+                  ++cell_0;
+                else if (*cell_1 < *cell_0)
+                  ++cell_1;
+                else
+                  {
+                    adjacent_cells.push_back(*cell_0);
+                    ++cell_0;
+                    ++cell_1;
+                  }
             }
         }
     }

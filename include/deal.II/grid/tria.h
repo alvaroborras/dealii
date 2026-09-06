@@ -30,6 +30,7 @@
 #include <deal.II/grid/tria_iterator_selector.h>
 #include <deal.II/grid/tria_levels.h>
 
+#include <boost/container/small_vector.hpp>
 #include <boost/range/iterator_range_core.hpp>
 #include <boost/serialization/map.hpp>
 #include <boost/serialization/split_member.hpp>
@@ -4158,7 +4159,8 @@ protected:
    * rebuilt by calling compute_line_to_adjacent_cells_map(). If
    * that function is not called, the map does not exist.
    */
-  std::optional<Table<2, std::set<active_cell_iterator>>>
+  std::optional<
+    Table<2, boost::container::small_vector<active_cell_iterator, 6>>>
     line_to_adjacent_cells_map;
 
   /**

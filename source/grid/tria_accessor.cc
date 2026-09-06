@@ -2313,7 +2313,9 @@ CellAccessor<dim, spacedim>::get_cells_adjacent_to_line(
     return std::set<TriaActiveIterator<CellAccessor<dim, spacedim>>>();
 
   const auto &map = this->tria->line_to_adjacent_cells_map;
-  return map.value()[this->active_cell_index()][i];
+  return std::set<TriaActiveIterator<CellAccessor<dim, spacedim>>>(
+    map.value()[this->active_cell_index()][i].begin(),
+    map.value()[this->active_cell_index()][i].end());
 }
 
 
